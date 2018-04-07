@@ -199,7 +199,124 @@ p2 = p3;       //
 p2 = &i;
 int &r = ci;
 const int &r2 = i;
-```      
+```
+const int \*p为什么可以不初始化？    
+P53 写道：**const对象一旦创建后其值就不能再改变，所以const对象必须初始化**     
+但是在P57中练习2.28第（e）题为什么判断合法呢？为什么可以不用初始化呢？
+```C++
+const int *p;    //legal.a pointer to const int
+```
+-------解决思路-------      
+```c++
+const int *p; //p是指针，指向const int类型数据
+int * const int p; //p是常指针，指向int类型数据
+const int * const p; //p是常指针，指向const int类型数据
+```
+--------解决思路-------      
+const对象一旦创建后，其值就不能再改变，所以const对象必须初始化。对于这句话中的const对象要弄清楚：`const int *p`中，const对象是\*p（即\*p是只读），而对于此句“**const对象必须初始化**”，一般用法中我们要给指针p初始化，而不是给\*p初始化。所以在此可以不初始化。即使在声明是进行初始化（`const int *p = 0x123456`），也是对指针p初始化，等价于如下一般用法：
+```c++
+const int *p;
+p = 0x123456;  //此时是在给指针p赋值，而不是给*p赋值
+```
+`int *const p`中，const对象是p，此时在指针p声明时必须初始化。一般用法：    
+```c++
+int *const p = 0x123456;
+```
+----------解决思路------------     
+* 遇到const修饰对指针，需要注意两种可能：      
+1.指针变量指向的值无法改变
+2.指针变量本身无法改变      
+```c++
+int a = 10;
+const int *p;
+p = &a;
+*p = 3;   //错误，通过此指针改变指向的值
+int b = 5;
+p = &b;   //正确
+int c = 10;
+int *const p = &c;
+*p = 5;  //正确
+int d = 5;
+p = &d;   //错误，指针变量不能改变
+```
+-------------解决思路-----------------
+>（1）int \*p ----- p是个非const指针，指向的对象是int;       
+>（2）const int \*p ---- p是个非const指针，指向的对象是const int;       
+>（3）int \*const p ---- p是个const指针，指向的对象的是int;    
+>（4）const int \*const p ---- p是个const指针，指向的对象是const int。            
+>以上的四个都是定义指针p，如果初始化是指初始化指针p，而不是它所指向的对象，由于（3）和（4）中指针p是const的，所以必须初始化。（1）和（2）中的指针p是非const的，可以不初始化。       
+必须要明确的一点，在constexpr声明中如果定义了一个指针，限定符constexpr仅对指针有效，与指针所指的对象无关：    
+```c++
+const int *p = nullptr;     //p是一个指向整型常量的指针
+constexpr int *q = nullptr; //q是一个指向整数的常量指针
+```
+q是一个常量指针，其中关键在于contexpr把它所定义的对象置为了顶层const。
+**易混淆：**(如果某个类型别名指代的是复合类型或常量，那么把它用到声明语句里就会产生意想不到的后果。例： 。  
+```c++
+typedef char *pstring    //pstring是char *同义词
+const pstring cstr = 0;  //注意：cstr是指向char的常量指针，不能错误理解为const char *cstr = 0     
+                         //pstring实际上是指向char的指针，因此，const pstring就是指向char的常量指针
+                         //前者声明了一个指向char的常量指针，错误理解是声明了一个指向const char的指针
+const pstring *ps;       //ps是一个指针，它的对象是指向char的常量指针
+```    
+**易混淆** ：C++11新标准引入了`auto`类型操作符，用它能让编译器替我们去分析表达式所属的类型。`auto`让编译器通过初始值来推算变量的类型。显然，auto定义的变量必须有初始值。auto一般会忽略掉顶层const，同时底层const则会保留下来，比如当初始值是一个指向常量的指针时：    
+```c++
+int i = 0,&r = i;
+auto a = r;     //a是一个整数（r是i的别名，而i是一个整数）
+const int ci =i, &cr = ci;
+auto b = ci;    //b是一个整数（ci的顶层const特性被忽略掉了）
+auto c = cr;    //c是一个整数（cr是ci的别名，ci本身就是一个顶层const）
+auto d = &i;    //d是一个整型指针（整数的地址就是指向整数的指针）
+auto e = &ci;   //e是一个指向整数常量的指针（对常量对象取地址是一种底层const）
+```
+如果希望推断出的auto类型是一个顶层const，需要明确指出：    
+```c++
+const auto f = ci;    //ci推演类型是int，f是const int
+```
+还可以将引用的类型设为auto，此时原来的初始化规则仍然使用：      
+```c++
+auto &g = ci;   //g是一个整型常量引用，绑定到ci
+auto &h = 42;   //错误：不能为非常量引用绑定字面值
+const auto &j = 42; //正确：可以为常量引用绑定字面值 
+```
+要在一条语句中定义多个变量，切记，符号&和\*只从属于某个声明符，而非基本数据类型的一部分，因此初始值必须是同一种类型：    
+```C++
+auto k = ci, &l = i;   //k是整数（ci的顶层特性被忽略掉），l是整型引用
+auto &m = ci, *p = &ci;   //m是对整型常量的引用，p是指向整型常量的指针
+//错误：i的类型是int而&ci的类型是const int
+auto &n = i, *p = &ci;
+```
+有时希望遇到这种情况，希望从表达式的类型推断出要定义的变量的类型，但是不想用该表达式初始化变量。C++11新标准引入了第二种类型说明符：`decltype`,它的作用是选择并返回操作数的数据类型。在此过程中，编译器分析表达式并得到它的类型，却不实际计算表达式的值：   
+```c++
+decltype(f()) sum = x;    //sum的类型就是函数f的返回类型
+```
+decltype处理顶层const和引用的方式与auto有些许不同。如果decltype使用的表达式是一个变量，则decltype返回该变量的类型（包括顶层const和引用在内）：   
+```c++
+const int ci = 0, &cj = ci;
+decltype(ci) x = 0;  //x的类型是const int
+decltype(cj) y = x;  //y的类型是const int&, y绑定到变量x
+decltype(cj) z;      //错误：z是一个引用，必须初始化
+```
+decltype的结果可以是引用类型：     
+```c++
+int i = 42, *p = &i, &r = i;
+decltype(r + 0) b;    //正确：加法的结果是int，因此b是一个（为初始化的）int
+decltype(*p) c;       //错误：c是int&，必须初始化
+decltype((i)) d;      //错误：d是int&，必须初始化
+```
+r+0，显然这个表达式的结果将是一个具体值而非一个引用。另一方面，**如果表达式的内容是解引用，则decltype将得到引用类型**。正如我们熟悉的那样，解引用指针可以得到指针所指的对象，而且还能给这个对象赋值。因此**decltype(\*p)的结果类型就是int&，而非int**。`decltype((variable))`（注意是双层括号）的结果**永远**是引用。      
+>The way decltype handles top-level const and references differ subtly from the way auto does.Another important difference between decltype and auto is that the deduction done by decltype depends on the form of its given expression.
+`struct`是一个关键字，用于定义类：     
+```c++
+struct Sales_data{
+    std::string bookNo;
+    unsigned units_sold = 0;
+    double revenue = 0.0;
+};
+```
+
+
+
 
 
 
