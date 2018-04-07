@@ -195,10 +195,10 @@ const int &r = ci;        //用于声明的引用const都是底层const
 i = ci;         //正确：拷贝ci的值，ci是一个顶层const，对此操作无影响
 p2 = p3;        //正确：p2和p3指向的对象类型相同，p3顶层const的部分不影响
 int *p = p3;    //错误：p3包含底层const定义，而p没有。 当执行对象的拷贝操作时候，拷入和拷出的对象必须具有相同的底层const资格
-p2 = p3;       //
-p2 = &i;
-int &r = ci;
-const int &r2 = i;
+p2 = p3;       //正确：p2和p3都是底层const
+p2 = &i;        //正确：int*能够转换成const int*
+int &r = ci;    //错误：普通的int&不能绑定到int常量上
+const int &r2 = i;  //正确：const int&可以绑定到一个普通int上
 ```
 const int \*p为什么可以不初始化？    
 P53 写道：**const对象一旦创建后其值就不能再改变，所以const对象必须初始化**     
@@ -305,7 +305,7 @@ decltype(*p) c;       //错误：c是int&，必须初始化
 decltype((i)) d;      //错误：d是int&，必须初始化
 ```
 r+0，显然这个表达式的结果将是一个具体值而非一个引用。另一方面，**如果表达式的内容是解引用，则decltype将得到引用类型**。正如我们熟悉的那样，解引用指针可以得到指针所指的对象，而且还能给这个对象赋值。因此**decltype(\*p)的结果类型就是int&，而非int**。`decltype((variable))`（注意是双层括号）的结果**永远**是引用。      
->The way decltype handles top-level const and references differ subtly from the way auto does.Another important difference between decltype and auto is that the deduction done by decltype depends on the form of its given expression.
+>The way decltype handles top-level const and references differ subtly from the way auto does.Another important difference between decltype and auto is that the deduction done by decltype depends on the form of its given expression.      
 `struct`是一个关键字，用于定义类：     
 ```c++
 struct Sales_data{
