@@ -320,7 +320,25 @@ struct Sales_data{
 };
 ```
 -------------------------------------------------
+### 第三章                  
+练习3.17：从cin读入一组词并把它们存入一个vector对象，然后设法把所有词都改写为大写形式。输出改变后的结果，每个词占一行。
+```c++
+#include<iostream>
+#include<vector>
+#include<string>
+using namespace std;
 
+int main(){
+    vector<string> str;
+    for(string word;cin >> word;str.push_back(word));
+    for(auto &i : str)     //str中每个单词i
+        for(auto &c : i)   //i中每个字母c
+            c = toupper(c);
+    for(decltype(str.size()) ix = 0;ix != str.size();ix++)
+        cout << str[ix] << endl;
+    return 0;
+}
+```
 
 
 
