@@ -404,6 +404,31 @@ int main()
 ```
 **Note**:编程的时候，常常需要把表达式的值赋给变量，但是很多时候，我们往往并不能清楚的知道表达式的类型，这一棘手的问题催生了C++11新标准提出了`auto`这个概念。有时候我们仅仅需要知道表达式表示的数据类型，而不需要用该表达式的值来初始化变量，这时我们就可以使用C++提供的`decltype`标识符。
 
+练习3.22:修改之前那个输出text第一段的程序，首先把text的第一段全部都改成大写形式，然后输出它。
+```c++
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cctype>      //改变某个字符特性的头文件，貌似不加也可以改变字符特性
+
+using std::vector; using std::string; using std::cout; using std::cin; using std::isalpha;
+
+int main()
+{
+    vector<string> text;
+    for (string line; cin >> line; text.push_back(line));   //cin >> line的话，省略了空格，可以对比getline(cin,line)时输出结果
+    
+    for (auto& word : text)                   //遍历每个单词的每个字母
+    {
+        for (auto& ch : word)
+            if (isalpha(ch))                 //当c是字母时为真
+                ch = toupper(ch);
+        cout << word << " ";                 //每一个词之间添加一个空格
+    }
+    
+    return 0;
+}
+```
 
 
 
