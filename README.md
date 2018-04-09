@@ -429,7 +429,25 @@ int main()
     return 0;
 }
 ```
+练习3.23:编写一段程序，创建一个含有10个整数的vector对象，然后使用迭代器将所有元素的值都变成原来的两倍。输出vector对象的内容，检验程序是否正确。
+```c++
+#include<iostream>
+#include<vector>
+#include<iterator>       //使用迭代器不要忘记此头文件
+using namespace std;
 
+int main()
+{
+    vector<int> nums;
+    for(int num;cin >> num;nums.push_back(num));
+    for(auto it = nums.begin();it != nums.end();++it)  //一段字符的话，判断结束还要加上&& !isspace(*it),意思是直至处理全部字符或遇到空白
+        *it = *it * 2;
+    for(auto i : nums)     //范围for语句遍历给定序列（或者容器）中的每个元素（字母/单词），并对其执行某种操作。
+        cout << i << " ";
+    cout << endl;
+    return 0 ;
+}
+```
 
 
 
