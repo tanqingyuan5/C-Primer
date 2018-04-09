@@ -465,6 +465,35 @@ while(mid != end && *mid != sought){
 ```
 beg指向搜索范围内的第一个元素、end指向尾元素的下一个位置、mid指向中间的那个元素。
 
+练习3.24:**请使用迭代器**读入一组整数并把它们存入一个vector对象，将每对相邻的整数和输出出来。改写你的程序，这次要求先输出第1个和最后一个元素的和，接着输出第2个和倒数第2个元素的和，以此类推。
+```c++
+#include <iostream>
+#include <vector>
+
+using std::vector; using std::cout; using std::endl; using std::cin;
+
+int main()
+{
+    vector<int> v;
+    for (int buffer; cin >> buffer; v.push_back(buffer));
+
+    if (v.size() < 2)
+    {
+        cout << " please enter at least two integers";
+        return -1;
+    }
+
+    for (auto it = v.cbegin(); it + 1 != v.cend(); ++it)   //体会循环条件，最后一个值的index要比容器中最大index少1，因为循环里是i+1
+        cout << *it + *(it + 1) << " ";         //是*(it + 1)不是*it + 1
+    cout << endl;
+
+    for (auto lft = v.cbegin(), rht = v.cend() - 1; lft <= rht; ++lft, --rht)    //仔细看这一句
+        cout << *lft + *rht << " ";
+    cout << endl;
+
+    return 0;
+}
+```
 
 
 
