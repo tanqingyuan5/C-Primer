@@ -356,6 +356,53 @@ int main()
     return 0;
 }
 ```
+练习3.20:读入一组整数并把它们存入一个vector对象，将每对相邻的整数和输出出来。改写你的程序，这次要求先输出第1个和最后一个元素的和，接着输出第2个和倒数第2个元素的和，以此类推。
+```c++
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int main()
+{
+    vector<int> nums;
+    for(int num;cin >> num;nums.push_back(num));
+    for(decltype(nums.size()) i = 0;i!=nums.size()-1;i++)
+        cout << nums[i]+nums[i+1] << endl;
+    return 0;
+}
+
+//改写后：
+#include <iostream>
+#include <vector>
+
+using std::vector;
+using std::cout;
+using std::endl;
+using std::cin;
+
+int main()
+{
+    vector<int> ivec;
+    for (int i; cin >> i; ivec.push_back(i));
+
+    if (ivec.empty())
+    {
+        cout << "input at least one integer." << endl;
+        return -1;
+    }
+
+    auto size = ivec.size();       //或者decltype(ivec.size()) size = ivec.size();  其实有点多此一举了，看下面Note分析
+    if (size % 2 != 0) size = size / 2 + 1;
+    else size /= 2;
+
+    for (int i = 0; i != size; ++i)
+        cout << ivec[i] + ivec[ivec.size() - i - 1] << " ";
+    cout << endl;
+
+    return 0;
+}
+```
+**Note**:编程的时候，常常需要把表达式的值赋给变量，但是很多时候，我们往往并不能清楚的知道表达式的类型，这一棘手的问题催生了C++11新标准提出了`auto`这个概念。有时候我们仅仅需要知道表达式表示的数据类型，而不需要用该表达式的值来初始化变量，这时我们就可以使用C++提供的`decltype`标识符。
 
 
 
