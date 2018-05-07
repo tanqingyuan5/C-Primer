@@ -598,6 +598,190 @@ decltype(ia) ia3 = {0,1,2,3,4,5,6,7,8,9};
 ia3 = p;    //错误：不能用整型指针给数组赋值
 ia3[4] = i; //正确：把i的值赋给ia3的一个元素
 ```
+**指针也是迭代器**
+```c++
+int arr[] = {0,1,2,3,4,5,6,7,8,9}
+int *p = arr;   //p指向arr的第一个元素
+++p;        //p指向arr[1]
+
+//利用上面得到的指针能重写之前的循环，令其输出arr的全部元素：
+int *e = &arr[10];  //指向arr尾元素的下一位置的指针，没什么卵用，后面引入begin和end函数
+for (int *b = arr;b! = e; ++b)
+    cout << *b << endl; //输出arr的元素
+```
+**标准库函数begin和end**，这两个函数定义在iterator头文件中
+```c++
+int ia[] = {0,1,2,3,4,5,6,7,8,9};  //ia是一个含有10个整数的数组
+int *beg = begin(ia);            //指向ia首元素的指针
+int *last = end(ia);             //指向arr尾元素的下一位置的指针
+```
+两个指针相减的结果的类型是一种名为`ptrdiff_t`的标准库类型，和size_t一样，ptrdiff_t也是一种定义在cstddef头文件中的机器相关的类型。因为差值可能为负值，所以ptrdiff_t是一种带符号类型。
+
+**内置的下标运算符所用的索引值不是无符号类型，这一点与vector和string不一样**
+```c++
+int *p = &ia[2];      //p指向索引为2的元素
+int j = p[1];         //p[1]等价于*(p+1),就是ia[3]表示的那个元素
+int k = p[-2];        //p[-2]是ia[0]表示的那个元素
+```
+练习3.35:编写一段程序，利用指针将数组中的元素置为0.
+```c++
+#include<iostream>
+using namespace std;
+
+int main()
+{
+    const int size = 10;
+    int arr[size];
+  
+    for (auto ptr = arr; ptr!= arr + size ; ++ptr)
+        *ptr = 0;
+    for(auto i:arr)
+        cout << i << " ";
+    cout << endl;
+    
+    return 0;
+}
+```
+练习3.36:编写一段程序，比较两个数组是否相等。再写一段程序，比较两个vector对象是否相等
+```c++
+#include<iostream>
+#include<vector>
+#include<iterator>
+
+using namespace std;
+bool compare(int* const pb1, int* const pe1, int* const pb2, int* const pe2)
+{
+    if ((pe1 - pb1) != (pe2 - pb2)) // have different size.
+        return false;
+    else
+    {
+        for (int* i = pb1, *j = pb2; (i != pe1) && (j != pe2); ++i, ++j)
+            if (*i != *j) return false;
+    }
+    
+    return true;
+}
+
+int main()
+{
+    int arr1[3] = { 0, 1, 2 };
+    int arr2[3] = { 0, 2, 4 };
+    
+    if (compare(begin(arr1), end(arr1), begin(arr2), end(arr2)))
+        cout << "The two arrays are equal." << endl;
+    else
+        cout << "The two arrays are not equal." << endl;
+    
+    cout << "==========" << endl;
+    
+    vector<int> vec1 = { 0, 1, 2 };
+    vector<int> vec2 = { 0, 1, 2 };
+    
+    if (vec1 == vec2)
+        cout << "The two vectors are equal." << endl;
+    else
+        cout << "The two vectors are not equal." << endl;
+    
+    return 0;
+}
+```
+
+| 命令 | 表3.8:C风格字符串的函数|
+| :---------- | :---------- | 
+| strlen(p)  | 返回p的长度，空字符不计算在内  |
+| strcmp(p1,p2)  | 比较p1和p2的相等性。如果p1==p2，返回0；如果p1>p2,返回一个正值；如果p1<p2，返回一个负值  |
+| strcat(p1,p2)  | 将p2附加到p1之后，返回p1  |
+| strcpy(p1,p2)  | 将p2拷贝给p1，返回p1  |
+
+传入此类函数的指针必须指向以空字符作为结束的数组
+```c++
+char ca[] = {'C', '+', '+'};    //不以空字符结束
+cout << strlen(ca) << endl;     //严重错误：ca没有以空字符结束
+```
+**Tip：对于大多数应用来说，使用标准库string要比使用C风格字符串更安全、更高效。**
+
+练习3.39:编写一段程序，比较两个string对象。再编写一段程序，比较两个C风格字符串内容。
+```c++
+#include <iostream>
+#include <string>
+#include <cstring>
+using std::cout; using std::endl; using std::string;
+
+int main()
+{
+    // use string.
+    string s1("Mooophy"), s2("Pezy");
+    if (s1 == s2)
+        cout << "same string." << endl;
+    else if (s1 > s2)
+        cout << "Mooophy > Pezy" << endl;
+    else
+        cout << "Mooophy < Pezy" << endl;
+
+    cout << "=========" << endl;
+
+    // use C-Style character strings.
+    const char* cs1 = "Wangyue";
+    const char* cs2 = "Pezy";
+    auto result = strcmp(cs1, cs2);
+    if (result == 0)
+        cout << "same string." << endl;
+    else if (result < 0)
+        cout << "Wangyue < Pezy" << endl;
+    else
+        cout << "Wangyue > Pezy" << endl;
+
+    return 0;
+}
+```
+练习3.40:编写一段程序，定义两个字符数组并用字符串字面值初始化它们；接着再定义一个字符数组存放前两个数组连接后的结果。使用strcpy和strcat把前两个数组的内容拷贝到第三个数组中。
+```c++
+
+
+#include <iostream>
+#include <cstring>
+
+const char cstr1[]="Hello";
+const char cstr2[]="world!";
+
+int main()
+{
+    constexpr size_t new_size = strlen(cstr1) + strlen(" ") + strlen(cstr2) +1;  \\这里+1
+    char cstr3[new_size];
+    
+    strcpy(cstr3, cstr1);
+    strcat(cstr3, " ");
+    strcat(cstr3, cstr2);
+    
+    std::cout << cstr3 << std::endl;
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
