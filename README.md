@@ -756,7 +756,299 @@ int main()
     std::cout << cstr3 << std::endl;
 }
 ```
+任何出现字符串字面值的地方都可以用以空字符结束的字符数组来替代：
 
+1.允许使用以空字符结束的字符数组来初始化string对象或为string对象赋值。
+
+2.在string对象的加法运算中允许使用以空字符结束的字符数组作为其中一个运算对象（不能两个运算对象都是）；在string对象的复合赋值运算中允许使用以空字符结束的字符数组作为其中一个运算对象（不能两个运算对象都是）；在string对象的复合赋值运算中允许使用以空字符结束的数组作为右侧的运算对象。
+
+**不能用string对象直接初始化指向字符的指针**。为了完成该功能，string专门提供了一个名为c_str的成员函数：
+```c++
+char *str = s; //错误：不能用string对象初始化char*
+const char *str = s.c_str();  //正确，
+```
+**c_str函数的返回值是一个C风格的字符串**。也就是说，函数的返回结果是一个指针，该指针指向一个以空字符结束的字符数组，而这个数组所存的数据恰好与那个string对象一样。结果指针的类型是const char\*，从而确保我们不会改变字符数组的内容。
+
+**warning：如果执行完c_str函数后程序想一直都能使用其返回的数组，最好将该数组重新拷贝一份。**
+
+不允许使用一个数组为另一个内置类型的数组赋初值，也不允许使用vector对象初始化数组。相反的，允许使用数组来初始化vector对象。要实现这一目的，只需指明要拷贝区域的首元素地址和**尾后地址**就可以了。
+```c++
+int int_arr[] = {0 ,1, 2, 3, 4, 5};
+//ivec有6个元素，分别是int_arr中对应元素的副本
+vector<int> ivec(begin(int_arr), end(int_arr));
+```
+用于初始化vector对象的值也可能仅是数组的一部分：
+```c++
+//拷贝三个元素：int_arr[1]、int_arr[2]、int_arr[3]
+vector<int> subVec(int_arr + 1, int_arr + 4);
+```
+这条初始化语句用3个元素创建了对象subVec，3个元素的值分别来自int_arr[1]、int_arr[2]、int_arr[3]。
+
+**建议：尽量使用标准库类型而非数组，现代的C++程序应当尽量使用vector和迭代器，避免使用内置数组和指针；应该尽量使用string，避免使用C风格的基于数组的字符串。**
+
+练习3.41：编写一段程序，用整型数组初始化一个vector对象。
+```c++
+#include<iostream>
+#include<vector>
+using namespace std;
+
+int main()
+{
+    int arr[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    vector<int> v(begin(arr),end(arr));
+    
+    for(auto i:v) cout << i << " ";
+    cout << endl;
+    
+    return 0;
+}
+```
+
+练习3.42:编写一段程序，将含有整数元素的数组的vector对象拷贝给一个整型数组。
+```c++
+#include<iostream>
+#include<vector>
+using namespace std;
+
+int main()
+{
+    vector<int> v{0, 1, 2, 3, 4, 5 ,6 ,7 ,8 ,9 };
+    int arr[10];
+    for(int i = 0;i != v.size(); ++i) arr[i] = v[i];
+    
+    for(auto i:arr) cout << i << " ";
+    cout << endl;
+    
+    return 0;
+}
+```
+严格来说，C++语言中没有多维数组，通常所说的多维数组其实是数组的数组。
+```c++
+int ia[3][4] = {         //三个元素，每个元素都是大小为4的数组
+    {0, 1, 2, 3},        //第1行的初始值
+    {4, 5, 6, 7},        //第2行的初始值
+    {8, 9 ,10 ,11}       //第3行的初始值
+};
+//没有标识每行的花括号，与之前的初始化语句是等价的
+int ia[3][4] = {0, 1, 2, 3, 4, 5, 6, 7, 8 , 9, 10, 11} 
+```
+
+如果表达式含有的下标运算符数量和数组的维度一样多，该表达式的结果将是给定类型的元素；反之，如果表达式含有的下标运算符数量比数组的维度小，则表达式的结果将是给定索引处的一个内层数组：
+```c++
+//用arr的首元素为ia最后一行的最后一个元素赋值
+ia[2][3] = arr[0][0][0];
+int (&row)[4] = ia[1];    //把row绑定到ia的第二个4元素数组上
+```
+
+程序中经常会用到两层嵌套的for循环来处理多维数组的元素：
+```c++
+constexpr size_t rowCnt = 3, colCnt = 4;
+int ia[rowCnt][colCnt];  //12个未初始化的元素
+//对于每一行
+for (size_t i = 0; i != rowCnt; ++i) {
+    //对于行内每一列
+    for (size_t j = 0; j != colCnt; ++j) {
+        //将元素的位置索引作为它的值
+        ia[i][j] = i * colCnt + j;
+    }
+}
+```
+由于在C++11新标准中新增了范围for语句，所以前一个程序可以简化为如下形式：
+```c++
+size_t cnt = 0;
+for(auto &row:ia)           //对于外层数组的每一个元素
+    for(auto &col:row){     //对于内层数组的每一个元素
+        col = cnt;          //将下一值赋给该元素
+        ++cnt;              //将cnt加1
+}
+```
+因为要改变元素的值，所以得把控制变量row和col声明成引用类型。第一个for循环遍历ia的所有元素，这些元素是大小为4的数组，因此**row的类型就应该是含有4个整数的数组的引用。**
+
+即使循环中没有任何写操作，我们还是将外层循环的控制变量声明成了引用类型，这是为了避免数组被自动转成指针。
+
+**Note：要使用范围for语句处理多维数组，除了最内层的循环外，其他所有循环的控制变量都应该是引用类型。**
+
+当程序使用多维数组的名字时，也会西东将其转换成指向数组首元素的指针。
+
+***指针和多维数组***
+
+***Note：定义指向多维数组的指针时，千万别忘了这个多维数组实际上是数组的数组。***
+
+***因为多维数组实际上是数组的数组，所以由多维数组名转换得来的指针实际上是指向第一个内层数组的指针：***
+
+```c++
+int ia[3][4];      //大小为3的数组，每个元素是含有4个整数的数组
+int (*p)[4] = ia;  //p指向含有4个整数的数组
+p = &ia[2];        //p指向ia的尾元素
+```
+***我们首先明确（\*p）意味着p是一个指针。接着观察右边发现，指针p所指的是一个维度为4的数组；再观察左边知道，数组中的元素是整数。因此，p就是指向含有4个整数的数组的指针。***
+```c++
+//在上述声明中，圆括号必不可少。
+int *ip[4];    //整型指针的数组
+int (*ip)[4];  //指向含有4个整数的数组
+```
+***
+随着C++11新标准的提出，通过使用auto或者decltype就能尽可能地避免在数组前面加上一个指针类型了：***
+```c++
+//输出ia中每个元素的值，每个内层数组各占一行
+//p指向含有4个整数的数组
+for (auto p = ia; q != ia + 3; ++p){
+    // q指向4个整数数组的首元素，也就是说，q指向一个整数
+    for(auto q = *p;q != *p + 4; ++Q)
+        cout << *q << ' ';
+    cout << endl;
+}
+```
+***外层的for循环首先声明一个指针p并令其指向ia的第一个内层数组，然后依次迭代直到ia的全部3行都处理完为止。其中递增运算++p负责将指针p移动到ia的下一行。
+
+***内层的for循环负责输出内层数组所包含的值。它首先令指针q指向p当前所在行的第一个元素。\*p是一个含有4个整数的数组，像往常一样，数组名被自动地转换成指向该数组首元素的指针。内层for循环不断迭代直到我们处理完了当前内层数组的所有元素为止。为了获取内层for循环的终止条件，再一次解引用p得到指向内层数组首元素的指针，给它加上4就得到了终止条件。***
+
+***当然，使用标准库函数begin和end也能实现同样的功能，而且看起来更简洁一些：***
+```c++
+//p指向ia的第一个数组
+for(auto p = begin(ia); p!=end(ia); ++p) {
+    //q指向内层数组的首元素
+    for(auto q = begin(*p); q!=end(*p); ++q)
+        cout << *q << ' '; //输出q所指的整数值
+cout << endl;
+}
+```
+***在这一版本的程序中，循环终止条件由end函数负责判断。虽然我们也能推断出p的类型是指向含有4个整数的数组的指针，q的类型是指向整数的指针，但是使用auto关键字我们就不必再烦心这些类型到底是什么了。***
+
+**类型别名简化多维数组的指针**
+
+    读、写和理解一个指向多维数组的指针是一个让人不胜其烦的工作，使用的类型别名能让这项工作变得简单一点儿，例如：
+```c++
+using int_array = int[4];    //新标准下类型别名的声明
+typedef int int_array[4];    //等价的typedef声明
+
+//输出ia中每个元素的值，每个内层数组各占一行
+for(int_array *p = ia;p != ia + 3; ++p) {
+    for( int *q = *p; q != *p + 4; ++q)
+        cout << *q << ' ';
+    cout << endl;
+}
+```
+程序将类型“4个整数组成的数组”命名为int_array，用类型名int_array定义外层循环的控制变量让程序显得简洁明了。
+
+练习3.43:编写3个不同版本的程序，令其均能输出ia的元素。版本1使用范围for语句管理迭代过程；版本2和版本3使用普通的for语句，其中版本2要求用下标运算符，版本3要求用指针。此外，在所有的3个版本的程序中都要直接写出数据类型，而不能使用类型别名、auto关键字或decltype关键字。
+```c++
+#include <iostream>
+using std::cout; using std::endl;
+
+int main()
+{
+    int arr[3][4] = 
+    { 
+        { 0, 1, 2, 3 },
+        { 4, 5, 6, 7 },
+        { 8, 9, 10, 11 }
+    };
+
+    // range for
+    for (const int(&row)[4] : arr)
+        for (int col : row) cout << col << " ";
+    cout << endl;
+
+    // for loop
+    for (size_t i = 0; i != 3; ++i)
+        for (size_t j = 0; j != 4; ++j) cout << arr[i][j] << " ";
+    cout << endl;
+
+    // using pointers.
+    for (int(*row)[4] = arr; row != arr + 3; ++row)
+        for (int *col = *row; col != *row + 4; ++col) cout << *col << " ";
+    cout << endl;
+
+    return 0;
+}
+```
+练习3.44:改写上一个练习中的程序，使用类型别名来代替循环控制变量的类型。
+```c++
+#include <iostream>
+using std::cout; using std::endl;
+
+int main()
+{
+    int ia[3][4] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+
+    // a range for to manage the iteration
+    // use type alias
+    using int_array = int[4];
+    for (int_array& p : ia)
+        for (int q : p)
+            cout << q << " ";
+    cout << endl;
+
+    // ordinary for loop using subscripts
+    for (size_t i = 0; i != 3; ++i)
+        for (size_t j = 0; j != 4; ++j)
+            cout << ia[i][j] << " ";
+    cout << endl;
+
+    // using pointers.
+    // use type alias
+    for (int_array* p = ia; p != ia + 3; ++p)
+        for (int *q = *p; q != *p + 4; ++q)
+            cout << *q << " ";
+    cout << endl;
+
+    return 0;
+}
+```
+练习3.45:再一次改写程序，这次使用auto关键字。
+```c++
+
+#include <iostream>
+using std::cout; using std::endl;
+
+int main()
+{
+    int ia[3][4] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+
+    // a range for to manage the iteration
+    for (auto& p : ia)
+        for (int q : p)
+            cout << q << " ";
+    cout << endl;
+
+    // ordinary for loop using subscripts
+    for (size_t i = 0; i != 3; ++i)
+        for (size_t j = 0; j != 4; ++j)
+            cout << ia[i][j] << " ";
+    cout << endl;
+
+    // using pointers.
+    for (auto p = ia; p != ia + 3; ++p)
+        for (int *q = *p; q != *p + 4; ++q)
+            cout << *q << " ";
+    cout << endl;
+
+    return 0;
+}
+```
+
+string对象是一个可变长的字符序列，vector对象是一组同类型对象的容器。一般来说，应该优先选用标准库提供的类型，之后再考虑C++语言内置的底层的替代品数组或指针。
+
+C风格字符串：以空字符结束的字符数组。字符串字面值是C风格字符串，C风格字符串容易出错。
+
+empty：是string和vector的成员，返回一个布尔值。当对象的大小为0时返回真，否则返回假。
+
+getline：在string头文件中定义的一个函数，以一个istream对象和一个string对象为输入参数。该函数首先读取输入流的内容直到遇到换行符为止，然后将读入的数据存入string对象麻醉后返回istream对象。其中换行符读入但是不保留。
+
+迭代器：是一种类型，用于访问容器中的元素或者在元素之间移动。
+
+尾后迭代器：end函数返回的迭代器，指向一个并不存在的元素，该元素位于容器尾元素的下一位置。
+
+prtdiff_t：是cstddef头文件中定义的一种与机器实现有关的带符号整数类型，它的空间足够大，能够表示数组中任意两个指针之间的距离。
+
+push_back：是vector的成员，向vector对象的末尾添加元素。
+
+size：是string和vector的成员，分别返回字符的数量或元素的数量。返回值的类型是size_type。
+
+size_t:是cstddef头文件中定义的一种与机器实现有关的无符号整数类型，它的空间足够大，能够表示任意数组的大小。
+
+->运算符：箭头运算符，该运算符综合了解引用操作和点操作。a->b等价与（\*a).b。
 
 
 
